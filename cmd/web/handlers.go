@@ -3,6 +3,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/dnataraj/healthbee/pkg/models"
 	"net/http"
 )
@@ -31,9 +32,10 @@ func (app *application) monitor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// if successful, initiate checks
-	//mon := app.NewMonitor(&site)
+	mon := app.NewMonitor(&site)
 	app.infoLog.Printf("starting HealthBee for site: %d", site.ID)
-	//mon.Start(app.wg)
+	mon.Start(app.wg)
 
-	app.respond(w, site, http.StatusOK)
+	w.Header().Add("Location", fmt.Sprintf("/monitor/%d", site.ID))
+	app.respond(w, site, http.StatusCreated)
 }

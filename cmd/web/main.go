@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"flag"
 	"fmt"
 	"github.com/dnataraj/healthbee/pkg"
@@ -29,17 +28,6 @@ type application struct {
 	sync.Mutex
 }
 
-func consume(ctx context.Context, r *kafka.Reader, log *log.Logger) {
-	for {
-		msg, err := r.ReadMessage(ctx)
-		if err != nil {
-			log.Fatal("unable to read message from cluster: ", err.Error())
-		}
-
-		log.Println("fetched message: ", string(msg.Value))
-	}
-}
-
 func main() {
 	addr := flag.String("addr", ":8000", "HTTP network address")
 	brokerList := flag.String("brokers", "localhost:9092", "Comma separated distributed cache peers")
@@ -50,44 +38,21 @@ func main() {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
 	connstr := fmt.Sprintf("postgres://postgres:%s@localhost/sites?sslmode=require", *dbpass)
-	db, err := openDB(connstr)
+	db, err := pkg.OpenDB(connstr)
 	if err != nil {
 		errorLog.Fatal("unable to connect to sites database: ", err.Error())
 	}
 	defer db.Close()
 
 	brokers := strings.Split(*brokerList, ",")
-	//ctx := context.Background()
-	//conn, err := kafka.DialLeader(ctx, "tcp", brokers[0], "Metrics", 0)
-	conn, err := kafka.Dial("tcp", brokers[0])
+	err = pkg.CreateTopic("Metrics", brokers)
 	if err != nil {
-		errorLog.Fatal("error connecting to cluster: ", err.Error())
-	}
-	defer conn.Close()
-	topicConfigs := []kafka.TopicConfig{
-		kafka.TopicConfig{
-			Topic:             "Metrics",
-			NumPartitions:     4,
-			ReplicationFactor: 2,
-		},
-	}
-	err = conn.CreateTopics(topicConfigs...)
-	if err != nil {
-		errorLog.Fatal("error creating Metrics topic on cluster: ", err.Error())
+		errorLog.Fatal("error creating metrics topic on cluster: ", err.Error())
 	}
 	w := &kafka.Writer{
 		Addr:  kafka.TCP(brokers...),
 		Topic: "Metrics", RequiredAcks: kafka.RequireAll,
 	}
-
-	/*
-		r := kafka.NewReader(kafka.ReaderConfig{
-			Brokers: brokers,
-			GroupID: "message-reader-group",
-			Topic:   "Metrics",
-		})
-
-	*/
 
 	wg := sync.WaitGroup{}
 	app := &application{
@@ -143,15 +108,4 @@ func webServer(ctx context.Context, srv *http.Server, wg *sync.WaitGroup) {
 	shCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(shCtx)
-}
-
-func openDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		return nil, err
-	}
-	if err = db.Ping(); err != nil {
-		return nil, err
-	}
-	return db, nil
 }
