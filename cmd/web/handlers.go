@@ -2,6 +2,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/dnataraj/healthbee/pkg/models"
 	"net/http"
 )
@@ -22,13 +23,17 @@ func (app *application) monitor(w http.ResponseWriter, r *http.Request) {
 	// generate an entry for site in the database
 	site.ID, err = app.sites.Insert(site.URL, site.Interval.Duration(), site.Pattern)
 	if err != nil {
-		app.serverError(w, err)
+		if errors.Is(err, models.ErrDuplicateSite) {
+			app.clientError(w, http.StatusConflict)
+		} else {
+			app.serverError(w, err)
+		}
 		return
 	}
 	// if successful, initiate checks
-	mon := app.NewMonitor(&site)
+	//mon := app.NewMonitor(&site)
 	app.infoLog.Printf("starting HealthBee for site: %d", site.ID)
-	mon.Start(app.wg)
+	//mon.Start(app.wg)
 
 	app.respond(w, site, http.StatusOK)
 }

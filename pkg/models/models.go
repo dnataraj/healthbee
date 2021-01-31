@@ -41,6 +41,8 @@ func (p *Period) UnmarshalJSON(b []byte) error {
 	}
 }
 
+var ErrDuplicateSite = errors.New("sites: duplicate site registration")
+
 type Site struct {
 	ID         int          `json:"id,omitempty"`
 	URL        string       `json:"url"`
