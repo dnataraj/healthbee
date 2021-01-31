@@ -5,13 +5,16 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"github.com/dnataraj/healthbee/pkg"
 	"github.com/dnataraj/healthbee/pkg/models/postgres"
 	_ "github.com/lib/pq"
 	"github.com/segmentio/kafka-go"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -19,7 +22,10 @@ type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
 
-	sites *postgres.SiteModel
+	sites    *postgres.SiteModel
+	monitors map[int]*pkg.Monitor
+	wg       *sync.WaitGroup
+	sync.Mutex
 }
 
 func produce(ctx context.Context, w *kafka.Writer, log *log.Logger) {
@@ -100,10 +106,13 @@ func main() {
 
 	//go produce(ctx, w, errorLog)
 	//consume(ctx, r, infoLog)
+	wg := sync.WaitGroup{}
 	app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
 		sites:    &postgres.SiteModel{DB: db},
+		monitors: make(map[int]*pkg.Monitor),
+		wg:       &wg,
 	}
 
 	srv := &http.Server{
@@ -111,10 +120,45 @@ func main() {
 		ErrorLog: errorLog,
 		Handler:  app.routes(),
 	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	infoLog.Printf("starting server on %s", *addr)
-	err = srv.ListenAndServe()
-	errorLog.Fatal(err)
+	wg.Add(1)
+	go webServer(ctx, srv, &wg)
+
+	// trap signals for clean shutdown and wait for all monitors to wrap up
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
+	infoLog.Println("server: shutting down HTTP services...")
+	cancel()
+
+	// cancel all monitors
+	infoLog.Println("server: shutting down HealthBee monitors...")
+	for _, monitors := range app.monitors {
+		monitors.Cancel()
+	}
+
+	wg.Wait()
+	infoLog.Println("server: all monitors stopped, exiting.")
+}
+
+// webServer starts the main HTTP service using the provided http.Server configuration.
+// Based on the article about connection draining found here: https://tylerchr.blog/golang-18-whats-coming/
+// A context and wait group is provided to handle graceful shutdown and notification
+func webServer(ctx context.Context, srv *http.Server, wg *sync.WaitGroup) {
+	defer wg.Done()
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+	// graceful shutdown, if stop is signalled from main routine
+	<-ctx.Done()
+	shCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = srv.Shutdown(shCtx)
 }
 
 func openDB(dsn string) (*sql.DB, error) {

@@ -1,4 +1,4 @@
-// Package main provides the implementation for the Healthbee API
+// Package main provides the implementation for the HealthBee API
 package main
 
 import (
@@ -7,10 +7,10 @@ import (
 )
 
 // createSite is a POST HTTP handler that accepts a JSON payload and creates a site entry,
-// and initiates the Healthbee monitor for this site
+// and initiates the monitoring for this site
 // The handler expects the request body to have the following schema
 // { "url": <string>, "period": <int>, "pattern": <string> }
-func (app *application) createSite(w http.ResponseWriter, r *http.Request) {
+func (app *application) monitor(w http.ResponseWriter, r *http.Request) {
 	site := models.Site{}
 	err := decode(r, &site)
 	if err != nil {
@@ -20,12 +20,15 @@ func (app *application) createSite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// generate an entry for site in the database
-	site.ID, err = app.sites.Insert(site.URL, site.Interval, site.Pattern)
+	site.ID, err = app.sites.Insert(site.URL, site.Interval.Duration(), site.Pattern)
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
-
 	// if successful, initiate checks
+	mon := app.NewMonitor(&site)
+	app.infoLog.Printf("starting HealthBee for site: %d", site.ID)
+	go mon.Start(app.wg)
+
 	app.respond(w, site, http.StatusOK)
 }

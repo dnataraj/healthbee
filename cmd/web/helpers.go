@@ -2,8 +2,11 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/dnataraj/healthbee/pkg"
+	"github.com/dnataraj/healthbee/pkg/models"
 	"net/http"
 	"runtime/debug"
 )
@@ -52,4 +55,18 @@ func (app *application) respond(w http.ResponseWriter, v interface{}, code int) 
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_, _ = buf.WriteTo(w)
+}
+
+func (app *application) NewMonitor(s *models.Site) *pkg.Monitor {
+	ctx, cancel := context.WithCancel(context.Background())
+	m := &pkg.Monitor{
+		Site:    s,
+		Context: ctx,
+		Cancel:  cancel,
+	}
+	app.Mutex.Lock()
+	defer app.Mutex.Unlock()
+	app.monitors[s.ID] = m
+
+	return m
 }

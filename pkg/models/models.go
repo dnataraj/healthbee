@@ -9,13 +9,14 @@ import (
 // Period represents a time interval or period as a time.Duration
 // Simple marshalling/unmarshalling as demonstrated here:
 // https://stackoverflow.com/questions/48050945/how-to-unmarshal-json-into-durations
-type Period struct {
-	time.Duration
+type Period time.Duration
+
+func (p Period) Duration() time.Duration {
+	return time.Duration(p)
 }
 
 func (p Period) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p.String())
-
+	return json.Marshal(p.Duration().String())
 }
 
 func (p *Period) UnmarshalJSON(b []byte) error {
@@ -25,14 +26,15 @@ func (p *Period) UnmarshalJSON(b []byte) error {
 	}
 	switch value := v.(type) {
 	case float64:
-		p.Duration = time.Duration(value)
+		*p = Period(time.Duration(value))
 		return nil
 	case string:
 		var err error
-		p.Duration, err = time.ParseDuration(value)
+		d, err := time.ParseDuration(value)
 		if err != nil {
 			return err
 		}
+		*p = Period(d)
 		return nil
 	default:
 		return errors.New("invalid duration")
