@@ -1,4 +1,4 @@
-
+[![Build Status](https://travis-ci.com/dnataraj/healthbee.svg?token=g7PAjZdpVPTj6UWnsEsA&branch=main)](https://travis-ci.com/dnataraj/healthbee)
 
 
 #### Install postgreSQL
