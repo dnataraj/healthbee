@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/dnataraj/healthbee/pkg"
@@ -58,12 +57,7 @@ func (app *application) respond(w http.ResponseWriter, v interface{}, code int) 
 }
 
 func (app *application) NewMonitor(s *models.Site) *pkg.Monitor {
-	ctx, cancel := context.WithCancel(context.Background())
-	m := &pkg.Monitor{
-		Site:    s,
-		Context: ctx,
-		Cancel:  cancel,
-	}
+	m := pkg.NewMonitor(s, app.writer)
 	app.Mutex.Lock()
 	defer app.Mutex.Unlock()
 	app.monitors[s.ID] = m

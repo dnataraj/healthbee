@@ -50,7 +50,8 @@ type Site struct {
 }
 
 type CheckResult struct {
-	At           time.Time
-	ResponseCode int
-	FoundPattern bool
+	SiteID         int       `json:"site_id"`
+	At             time.Time `json:"at"`
+	ResponseCode   int       `json:"response_code"`
+	MatchedPattern bool      `json:"found_pattern"`
 }

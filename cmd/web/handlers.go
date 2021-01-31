@@ -28,7 +28,7 @@ func (app *application) monitor(w http.ResponseWriter, r *http.Request) {
 	// if successful, initiate checks
 	mon := app.NewMonitor(&site)
 	app.infoLog.Printf("starting HealthBee for site: %d", site.ID)
-	go mon.Start(app.wg)
+	mon.Start(app.wg)
 
 	app.respond(w, site, http.StatusOK)
 }

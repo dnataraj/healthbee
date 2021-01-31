@@ -24,24 +24,9 @@ type application struct {
 
 	sites    *postgres.SiteModel
 	monitors map[int]*pkg.Monitor
+	writer   *kafka.Writer
 	wg       *sync.WaitGroup
 	sync.Mutex
-}
-
-func produce(ctx context.Context, w *kafka.Writer, log *log.Logger) {
-	i := 0
-	for {
-		err := w.WriteMessages(ctx, kafka.Message{
-			Key:   []byte(fmt.Sprintf("message-%d", i)),
-			Value: []byte(fmt.Sprintf("This is message %d", i)),
-		})
-		if err != nil {
-			log.Fatal("unable to write message to kafka cluster: ", err.Error())
-		}
-		i++
-		time.Sleep(time.Second)
-	}
-
 }
 
 func consume(ctx context.Context, r *kafka.Reader, log *log.Logger) {
@@ -90,12 +75,12 @@ func main() {
 	if err != nil {
 		errorLog.Fatal("error creating Metrics topic on cluster: ", err.Error())
 	}
-	/*
-		w := &kafka.Writer{
-			Addr:  kafka.TCP(brokers...),
-			Topic: "Metrics", RequiredAcks: kafka.RequireAll,
-		}
+	w := &kafka.Writer{
+		Addr:  kafka.TCP(brokers...),
+		Topic: "Metrics", RequiredAcks: kafka.RequireAll,
+	}
 
+	/*
 		r := kafka.NewReader(kafka.ReaderConfig{
 			Brokers: brokers,
 			GroupID: "message-reader-group",
@@ -104,14 +89,13 @@ func main() {
 
 	*/
 
-	//go produce(ctx, w, errorLog)
-	//consume(ctx, r, infoLog)
 	wg := sync.WaitGroup{}
 	app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
 		sites:    &postgres.SiteModel{DB: db},
 		monitors: make(map[int]*pkg.Monitor),
+		writer:   w,
 		wg:       &wg,
 	}
 

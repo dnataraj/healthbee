@@ -14,8 +14,8 @@ CREATE TABLE results (
     id INT GENERATED ALWAYS AS IDENTITY,
     site_id INT,
     checked_at TIMESTAMPTZ,
-    response_code INT,
-    found_pattern BOOLEAN NOT NULL,
+    result INT,
+    matched BOOLEAN NOT NULL,
     CONSTRAINT fk_sites
         FOREIGN KEY(site_id)
             REFERENCES sites(id)
