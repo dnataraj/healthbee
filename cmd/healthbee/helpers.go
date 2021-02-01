@@ -2,12 +2,15 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/dnataraj/healthbee/pkg"
 	"github.com/dnataraj/healthbee/pkg/models"
+	"github.com/segmentio/kafka-go"
 	"net/http"
 	"runtime/debug"
+	"sync"
 )
 
 func (app *application) serverError(w http.ResponseWriter, err error) {
@@ -63,4 +66,33 @@ func (app *application) NewMonitor(s *models.Site) *pkg.Monitor {
 	app.monitors[s.ID] = m
 
 	return m
+}
+
+func (app *application) read(ctx context.Context, id int, r *kafka.Reader, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			msg, err := r.ReadMessage(ctx)
+			if err != nil {
+				app.errorLog.Printf("auditor %d: unable to read message: %s", id, err.Error())
+				return
+			}
+			app.infoLog.Printf("auditor %d: fetched result: %s", id, string(msg.Value))
+			res := models.CheckResult{}
+			if err := json.Unmarshal(msg.Value, &res); err != nil {
+				app.errorLog.Printf("auditor %d: unable to detect valid message: %s", id, err.Error())
+				return
+			}
+			resID, err := app.results.Insert(res.SiteID, res.At, res.ResponseCode, res.MatchedPattern)
+			if err != nil {
+				app.errorLog.Printf("auditor %d: unable to write metrics for site [%d], failing with: %s", id, res.SiteID, err.Error())
+				return
+			}
+			app.infoLog.Printf("auditor %d: added metrics for site [%d], with id: %d", id, res.SiteID, resID)
+		}
+	}
 }
