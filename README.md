@@ -2,10 +2,10 @@
 
 HealthBee is a website availability monitoring service.
 
-####System Requirements
+#### System Requirements
 * HealthBee has been tested to work on Ubuntu 20.04 LTS with Golang 15.2
 
-####User Guide
+#### User Guide
 
 The HealthBee API can be used to register any (web) site for monitoring. The API is further specified in detail below.
 
