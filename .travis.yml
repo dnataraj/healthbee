@@ -3,3 +3,5 @@ language: go
 go:
     - 1.15.x
     - master
+
+script: go test -v ./... -short
