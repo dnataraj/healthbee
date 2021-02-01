@@ -20,7 +20,7 @@ The HealthBee API can be used to register any (web) site for monitoring. The API
                 "pattern": "content"  <-- an optional regular expression that is searched for in the returned page
             }
         ```
-* ```GET /sites/{id}/metrics``` will return the last 20 metrics for the given site in JSON 
+* ```GET /sites/{id}``` will return the last 20 metrics for the given site in JSON 
 
 ##### Installation and setup
 
