@@ -7,15 +7,13 @@ import (
 	"time"
 )
 
-const uniquenessViolation = pq.ErrorCode("23505")
-
 type SiteModel struct {
 	DB *sql.DB
 }
 
 func (s *SiteModel) Insert(URL string, interval time.Duration, pattern string) (int, error) {
 	var siteID int
-	stmt := `INSERT INTO sites (site_hash, url, period, pattern, created) VALUES(md5($1), $1, $2, $3, $4) RETURNING id`
+	stmt := `INSERT INTO sites (site_hash, url, period, pattern, created) VALUES (md5($1), $1, $2, $3, $4) RETURNING id`
 	err := s.DB.QueryRow(stmt, URL, interval.Seconds(), pattern, time.Now()).Scan(&siteID)
 	if err != nil {
 		if perr, ok := err.(*pq.Error); ok {

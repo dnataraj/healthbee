@@ -42,6 +42,7 @@ func (p *Period) UnmarshalJSON(b []byte) error {
 }
 
 var ErrDuplicateSite = errors.New("sites: duplicate site registration")
+var ErrNoRecord = errors.New("sites: no record found")
 
 type Site struct {
 	ID         int          `json:"id,omitempty"`
@@ -51,7 +52,9 @@ type Site struct {
 	LastResult *CheckResult `json:",omitempty"`
 }
 
+//TODO: in retrospect this is a not a good name for the struct, it should be HealthCheckResult or just Result
 type CheckResult struct {
+	ID             int       `json:"id"`
 	SiteID         int       `json:"site_id"`
 	At             time.Time `json:"at"`
 	ResponseCode   int       `json:"response_code"`
