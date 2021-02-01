@@ -3,8 +3,11 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"flag"
 	"github.com/dnataraj/healthbee/pkg"
+	"github.com/dnataraj/healthbee/pkg/models"
+	"github.com/dnataraj/healthbee/pkg/models/postgres"
 	_ "github.com/lib/pq"
 	"github.com/segmentio/kafka-go"
 	"log"
@@ -18,7 +21,11 @@ import (
 var infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 var errorLog = log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-func read(ctx context.Context, id int, r *kafka.Reader, wg *sync.WaitGroup) {
+type application struct {
+	results *postgres.ResultModel
+}
+
+func (app *application) read(ctx context.Context, id int, r *kafka.Reader, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for {
@@ -28,10 +35,22 @@ func read(ctx context.Context, id int, r *kafka.Reader, wg *sync.WaitGroup) {
 		default:
 			msg, err := r.ReadMessage(ctx)
 			if err != nil {
-				errorLog.Printf("auditor %d: unable to read message from cluster: %s", id, err.Error())
+				errorLog.Printf("auditor %d: unable to read message: %s", id, err.Error())
 				return
 			}
 			infoLog.Printf("auditor %d: fetched result: %s", id, string(msg.Value))
+			res := models.CheckResult{}
+			if err := json.Unmarshal(msg.Value, &res); err != nil {
+				errorLog.Printf("auditor %d: unable to detect valid message: %s", id, err.Error())
+				return
+			}
+
+			resID, err := app.results.Insert(res.SiteID, res.At, res.ResponseCode, res.MatchedPattern)
+			if err != nil {
+				errorLog.Printf("auditor %d: unable to write metrics for site [%d], failing with: %s", id, res.SiteID, err.Error())
+				return
+			}
+			infoLog.Printf("auditor %d: added metrics for site [%d], with id: %d", id, res.SiteID, resID)
 		}
 	}
 }
@@ -76,11 +95,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	app := &application{results: &postgres.ResultModel{DB: db}}
+
 	infoLog.Println("auditor: starting 2 readers for incoming metrics...")
 	wg.Add(1)
-	go read(ctx, 1, r1, &wg)
+	go app.read(ctx, 1, r1, &wg)
 	wg.Add(1)
-	go read(ctx, 2, r2, &wg)
+	go app.read(ctx, 2, r2, &wg)
 
 	// trap signals for clean shutdown and wait for all monitors to wrap up
 	infoLog.Println("auditor: services up and running...")
