@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
-	"fmt"
 	"github.com/dnataraj/healthbee/pkg"
 	_ "github.com/lib/pq"
 	"github.com/segmentio/kafka-go"
@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
+	"time"
 )
 
 var infoLog = log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -36,44 +37,53 @@ func read(ctx context.Context, id int, r *kafka.Reader, wg *sync.WaitGroup) {
 }
 
 func main() {
+	local := flag.Bool("local", false, "Set for local development mode")
 	brokerList := flag.String("brokers", "localhost:9092", "Comma separated distributed cache peers")
-	dbpass := flag.String("password", "", "Password for the sites database")
+	dsn := flag.String("dsn", "", "DSN/Connection string for the PostgreSQL database")
+	srvCertPath := flag.String("service-cert", "./certs/kafka/service.cert", "Path to the service public certificate")
+	srvKeyPath := flag.String("service-key", "./certs/kafka/service.key", "Path to the private key")
+	caPath := flag.String("ca-cert", "./certs/kafka/ca.pem", "Path to the CA certificate")
 	flag.Parse()
 
-	connstr := fmt.Sprintf("postgres://postgres:%s@localhost/sites?sslmode=require", *dbpass)
-	db, err := pkg.OpenDB(connstr)
+	db, err := pkg.OpenDB(*dsn)
 	if err != nil {
 		errorLog.Fatal("unable to connect to sites database: ", err.Error())
 	}
 	defer db.Close()
 
+	// initialize TLS config for non-local services
+	var tlsConfig *tls.Config
+	if !*local {
+		infoLog.Println("server: configuring TLS for kafka service...")
+		tlsConfig, err = pkg.GetTLSConfig(*srvCertPath, *srvKeyPath, *caPath)
+		if err != nil {
+			errorLog.Fatal("server: error initializing kafka dialer: ", err.Error())
+		}
+	}
+
 	brokers := strings.Split(*brokerList, ",")
-	err = pkg.CreateTopic("Metrics", brokers)
+	err = pkg.CreateTopic("Metrics", brokers, tlsConfig)
 	if err != nil {
 		errorLog.Fatal("error creating metrics topic on cluster: ", err.Error())
 	}
 
-	r1 := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: brokers,
-		GroupID: "message-reader-group",
-		Topic:   "Metrics",
-	})
-	r2 := kafka.NewReader(kafka.ReaderConfig{
-		Brokers: brokers,
-		GroupID: "message-reader-group",
-		Topic:   "Metrics",
-	})
+	dialer := &kafka.Dialer{Timeout: 10 * time.Second, TLS: tlsConfig}
+	infoLog.Println("auditor: creating readers for incoming metrics...")
+	r1 := newReader(brokers, dialer)
+	r2 := newReader(brokers, dialer)
 
 	wg := sync.WaitGroup{}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	infoLog.Println("auditor: starting 2 readers for incoming metrics...")
 	wg.Add(1)
 	go read(ctx, 1, r1, &wg)
 	wg.Add(1)
 	go read(ctx, 2, r2, &wg)
 
 	// trap signals for clean shutdown and wait for all monitors to wrap up
+	infoLog.Println("auditor: services up and running...")
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
@@ -85,4 +95,13 @@ func main() {
 	wg.Wait()
 
 	infoLog.Println("auditor: exiting.")
+}
+
+func newReader(brokers []string, dialer *kafka.Dialer) *kafka.Reader {
+	return kafka.NewReader(kafka.ReaderConfig{
+		Brokers: brokers,
+		GroupID: "message-reader-group",
+		Topic:   "Metrics",
+		Dialer:  dialer,
+	})
 }

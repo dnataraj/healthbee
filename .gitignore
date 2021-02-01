@@ -91,3 +91,6 @@ fabric.properties
 
 # Local executables
 bin/
+
+# All certificate keys
+*.key

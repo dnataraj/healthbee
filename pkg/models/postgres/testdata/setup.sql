@@ -11,6 +11,8 @@ CREATE TABLE sites (
     PRIMARY KEY(id)
 );
 
+CREATE INDEX idx_site_hash ON sites (site_hash);
+
 CREATE TABLE results (
     id INT GENERATED ALWAYS AS IDENTITY,
     site_id INT,

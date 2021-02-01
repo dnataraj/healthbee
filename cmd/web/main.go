@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"github.com/dnataraj/healthbee/pkg"
@@ -29,29 +30,44 @@ type application struct {
 }
 
 func main() {
+	local := flag.Bool("local", false, "Set for local development mode")
 	addr := flag.String("addr", ":8000", "HTTP network address")
 	brokerList := flag.String("brokers", "localhost:9092", "Comma separated distributed cache peers")
-	dbpass := flag.String("password", "", "Password for the sites database")
+	dsn := flag.String("dsn", "", "DSN/Connection string for the PostgreSQL database")
+	srvCertPath := flag.String("service-cert", "./certs/kafka/service.cert", "Path to the service public certificate")
+	srvKeyPath := flag.String("service-key", "./certs/kafka/service.key", "Path to the private key")
+	caPath := flag.String("ca-cert", "./certs/kafka/ca.pem", "Path to the CA certificate")
 	flag.Parse()
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	connstr := fmt.Sprintf("postgres://postgres:%s@localhost/sites?sslmode=require", *dbpass)
-	db, err := pkg.OpenDB(connstr)
+	db, err := pkg.OpenDB(*dsn)
 	if err != nil {
-		errorLog.Fatal("unable to connect to sites database: ", err.Error())
+		errorLog.Fatal("server: unable to connect to sites database: ", err.Error())
 	}
 	defer db.Close()
 
-	brokers := strings.Split(*brokerList, ",")
-	err = pkg.CreateTopic("Metrics", brokers)
-	if err != nil {
-		errorLog.Fatal("error creating metrics topic on cluster: ", err.Error())
+	// initialize TLS config for non-local services
+	var tlsConfig *tls.Config
+	if !*local {
+		infoLog.Println("server: configuring TLS for kafka service...")
+		tlsConfig, err = pkg.GetTLSConfig(*srvCertPath, *srvKeyPath, *caPath)
+		if err != nil {
+			errorLog.Fatal("server: error initializing kafka dialer: ", err.Error())
+		}
 	}
+
+	brokers := strings.Split(*brokerList, ",")
+	err = pkg.CreateTopic("Metrics", brokers, tlsConfig)
+	if err != nil {
+		errorLog.Fatal("server: error creating metrics topic on cluster: ", err.Error())
+	}
+
 	w := &kafka.Writer{
 		Addr:  kafka.TCP(brokers...),
 		Topic: "Metrics", RequiredAcks: kafka.RequireAll,
+		Transport: &kafka.Transport{TLS: tlsConfig},
 	}
 
 	wg := sync.WaitGroup{}
@@ -72,7 +88,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	infoLog.Printf("starting server on %s", *addr)
+	infoLog.Printf("starting HealthBee API server on %s", *addr)
 	wg.Add(1)
 	go webServer(ctx, srv, &wg)
 
