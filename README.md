@@ -14,7 +14,7 @@
       - ```go run ./cmd/web -h``` provides usage information
       - Local brokers and databases can be used, just provide the local service addressed and use the ```-local``` flag
     - Then, start the auditor service
-      - ``go run ./cmd/auditors --brokers "<kafka service endpoint>" --dsn "<postgres connection string>"```
+      - ```go run ./cmd/auditors --brokers "<kafka service endpoint>" --dsn "<postgres connection string>"```
       - Currently there are 2 consumers for the auditor service
     
 * Register a site for monitoring
