@@ -38,6 +38,8 @@ func NewMonitor(s *models.Site, w *kafka.Writer) *Monitor {
 
 // Start starts the monitor for the site in a goroutine. The wait group operand is incremented and the monitoring
 // results are published to a Kafka topic.
+// Monitor periodicity is achieved with a ticker set to the specified interval for the site and will run until
+// the monitor is cancelled when the HealthBee service ends.
 func (m *Monitor) Start(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
@@ -69,6 +71,10 @@ func (m *Monitor) Start(wg *sync.WaitGroup) {
 	}(wg)
 }
 
+// getResult checks site availability associated with this monitor instance
+// The passed in time denotes when the check took place
+// The checks basically record the response and also if a particular pattern is present
+// in the returned content
 func (m *Monitor) getResult(at time.Time) (*models.CheckResult, error) {
 	req, err := http.NewRequest("GET", m.Site.URL, nil)
 	if err != nil {
@@ -99,6 +105,9 @@ func (m *Monitor) getResult(at time.Time) (*models.CheckResult, error) {
 	}, nil
 }
 
+// publishResult marshals a site availability check result and publishes
+// this to a Kafka topic.
+// The key used while publishing is the Site ID
 func (m *Monitor) publishResult(res *models.CheckResult) error {
 	data, err := json.Marshal(res)
 	if err != nil {

@@ -1,3 +1,5 @@
+// Package main provides the HealthBee service functionality and the web listener that co-ordinates site
+// monitoring and metrics collection
 package main
 
 import (
@@ -33,7 +35,9 @@ type application struct {
 }
 
 func main() {
+	// Passing in --local avoids configuring TLS for local service integration, for example
 	local := flag.Bool("local", false, "Set for local development mode")
+	// --reset is an aid to clean the database
 	reset := flag.Bool("reset", false, "Clear all site registrations and metrics")
 	addr := flag.String("addr", ":8000", "HTTP network address")
 	brokerList := flag.String("brokers", "localhost:9092", "Comma separated distributed cache peers")
@@ -106,7 +110,7 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// start the auditors
+	// start the auditors - these are the consumers for the topic
 	infoLog.Println("server: creating readers for incoming metrics...")
 	dialer := &kafka.Dialer{Timeout: 10 * time.Second, TLS: tlsConfig}
 	r1 := newReader(brokers, dialer)

@@ -24,6 +24,8 @@ func (app *application) clientError(w http.ResponseWriter, status int) {
 	http.Error(w, http.StatusText(status), status)
 }
 
+// decode is a simple response deserializer.
+// If the destination interface as an OK method, this can be used for simple validation
 func decode(r *http.Request, v interface{}) error {
 	err := json.NewDecoder(r.Body).Decode(v)
 	if err != nil {
@@ -59,6 +61,8 @@ func (app *application) respond(w http.ResponseWriter, v interface{}, code int) 
 	_, _ = buf.WriteTo(w)
 }
 
+// NewMonitor initializes and returns a site monitor. The monitor encapsulates
+// context cancellation and is retained in a map so that it can be managed afterwards
 func (app *application) NewMonitor(s *models.Site) *pkg.Monitor {
 	m := pkg.NewMonitor(s, app.writer)
 	app.Mutex.Lock()
@@ -68,6 +72,10 @@ func (app *application) NewMonitor(s *models.Site) *pkg.Monitor {
 	return m
 }
 
+// read consumes messages from a specific Kafka topic and publishes this to a PostgreSQL database
+// These are the site availability metrics previously published by the site monitors
+// Readers (a.k.a auditors) can be cancelled via the passed in Context
+// TODO: This belongs in pkg along with Monitor
 func (app *application) read(ctx context.Context, id int, r *kafka.Reader, wg *sync.WaitGroup) {
 	defer wg.Done()
 

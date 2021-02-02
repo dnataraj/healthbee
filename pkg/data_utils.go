@@ -40,8 +40,8 @@ func CreateTopic(name string, brokers []string, config *tls.Config) error {
 	defer ctlrConn.Close()
 
 	topicConfigs := []kafka.TopicConfig{
-		kafka.TopicConfig{
-			Topic:             "Metrics",
+		{
+			Topic:             name,
 			NumPartitions:     4,
 			ReplicationFactor: 2,
 		},

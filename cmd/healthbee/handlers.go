@@ -12,6 +12,7 @@ import (
 // and initiates the monitoring for this site
 // The handler expects the request body to have the following schema
 // { "url": <string>, "period": <int>, "pattern": <string> }
+// Duplicate site registrations are not allowed and results in a HTTP 409
 func (app *application) monitor(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		app.list(w, r)
