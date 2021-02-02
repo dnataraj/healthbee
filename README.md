@@ -25,7 +25,7 @@ Monitoring results are collected and eventually stored for analysis. The API is 
 
 ##### Installation and setup
 * HealthBee can be installed on your system using the ```go get``` [command](https://golang.org/pkg/cmd/go/internal/get/), for example
-    ```$>go get -v github.com/dnataraj/healthbee/cmd/healthbee```
+    ```$>go get -u -v github.com/dnataraj/healthbee/cmd/healthbee```
 * This will install the HealthBee binary to a directory specified in the ```$GOBIN``` env var
   
 ##### Starting & configuring HealthBee 
@@ -48,8 +48,7 @@ the running process
 #### Development Notes
 * TODO: (High) Move the consumer/auditor functionality into pkg, where it belongs
 * TODO: Highlight testing strategy and possibilities - both unit and integration
-* TODO: Complete API implementation
-
+* TODO: Add support for site & metrics removal
 
 #### Attributions and credits
 * Attributions have been mentioned in the source code wherever appropriate but are also listed here
