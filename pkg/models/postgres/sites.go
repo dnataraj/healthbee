@@ -20,10 +20,10 @@ func (s *SiteModel) Insert(URL string, interval models.Period, pattern string) (
 	if err != nil {
 		if perr, ok := err.(*pq.Error); ok {
 			if perr.Code == uniquenessViolation {
-				return 0, models.ErrDuplicateSite
+				return -1, models.ErrDuplicateSite
 			}
 		}
-		return 0, err
+		return -1, err
 	}
 	return siteID, nil
 }

@@ -17,7 +17,7 @@ func (r *ResultModel) Insert(siteID int, checkedAt time.Time, responseTime model
 	stmt := `INSERT INTO results (site_id, checked_at, response_time, result, matched) VALUES ($1, $2, $3, $4, $5) RETURNING id`
 	err := r.DB.QueryRow(stmt, siteID, checkedAt, responseTime.Duration().Milliseconds(), code, matched).Scan(&id)
 	if err != nil {
-		return 0, nil
+		return -1, nil
 	}
 	return id, nil
 }

@@ -69,7 +69,7 @@ func TestResultModel_Insert(t *testing.T) {
 		responseTime models.Period
 		responseCode int
 		matched      bool
-		wantResult   *models.CheckResult
+		wantResult   int
 		wantError    error
 	}{
 		{
@@ -79,15 +79,8 @@ func TestResultModel_Insert(t *testing.T) {
 			responseTime: models.Period(300 * time.Millisecond),
 			responseCode: 200,
 			matched:      true,
-			wantResult: &models.CheckResult{
-				ID:             4,
-				SiteID:         1,
-				At:             at,
-				ResponseTime:   300,
-				ResponseCode:   200,
-				MatchedPattern: true,
-			},
-			wantError: nil,
+			wantResult:   4,
+			wantError:    nil,
 		},
 	}
 
@@ -96,13 +89,13 @@ func TestResultModel_Insert(t *testing.T) {
 			db, teardown := newTestDB(t)
 			defer teardown()
 
-			r := ResultModel{DB: db}
+			r := &ResultModel{DB: db}
 			id, err := r.Insert(tt.siteID, tt.at, tt.responseTime, tt.responseCode, tt.matched)
 			if err != tt.wantError {
 				t.Errorf("want %v, got %s", tt.wantError, err)
 			}
-			if id != tt.wantResult.ID {
-				t.Errorf("want %d, got %d", tt.wantResult.ID, id)
+			if id != tt.wantResult {
+				t.Errorf("want %d, got %d", tt.wantResult, id)
 			}
 		})
 	}
