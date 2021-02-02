@@ -13,10 +13,10 @@ type SiteModel struct {
 }
 
 // Insert adds an entry to the Sites table
-func (s *SiteModel) Insert(URL string, interval time.Duration, pattern string) (int, error) {
+func (s *SiteModel) Insert(URL string, interval models.Period, pattern string) (int, error) {
 	var siteID int
 	stmt := `INSERT INTO sites (site_hash, url, period, pattern, created) VALUES (md5($1), $1, $2, $3, $4) RETURNING id`
-	err := s.DB.QueryRow(stmt, URL, interval.Seconds(), pattern, time.Now()).Scan(&siteID)
+	err := s.DB.QueryRow(stmt, URL, interval.Duration().Seconds(), pattern, time.Now()).Scan(&siteID)
 	if err != nil {
 		if perr, ok := err.(*pq.Error); ok {
 			if perr.Code == uniquenessViolation {

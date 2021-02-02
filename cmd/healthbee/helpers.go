@@ -78,7 +78,7 @@ func (app *application) resume() {
 	if err != nil {
 		app.errorLog.Fatal("server: unable to resume monitoring, failed with: ", err)
 	}
-	app.infoLog.Printf("found sites %+v", sites)
+	app.infoLog.Printf("server: resuming monitoring for %d sites", len(sites))
 	for _, site := range sites {
 		m := app.NewMonitor(site)
 		app.infoLog.Printf("server: resuming monitoring for site [%d] with address [%s]...", site.ID, site.URL)
@@ -109,7 +109,7 @@ func (app *application) read(ctx context.Context, id int, r *kafka.Reader, wg *s
 				app.errorLog.Printf("auditor %d: unable to detect valid message: %s", id, err.Error())
 				return
 			}
-			resID, err := app.results.Insert(res.SiteID, res.At, res.ResponseCode, res.MatchedPattern)
+			resID, err := app.results.Insert(res.SiteID, res.At, res.ResponseTime, res.ResponseCode, res.MatchedPattern)
 			if err != nil {
 				app.errorLog.Printf("auditor %d: unable to write metrics for site [%d], failing with: %s", id, res.SiteID, err.Error())
 				return

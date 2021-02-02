@@ -26,7 +26,7 @@ Monitoring results are collected and eventually stored for analysis. The API is 
 ##### Installation and setup
 * HealthBee can be installed on your system using the ```go get``` [command](https://golang.org/pkg/cmd/go/internal/get/), for example
     ```$>go get -u -v github.com/dnataraj/healthbee/cmd/healthbee```
-* This will install the HealthBee binary to a directory specified in the ```$GOBIN``` env var
+* This will install the latest HealthBee binary to a directory specified in the ```$GOBIN``` env var
   
 ##### Starting & configuring HealthBee 
 Since HealthBee relies on Apache Kafka and PostgreSQL to do its work efficiently and securely, various 

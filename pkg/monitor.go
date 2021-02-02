@@ -81,11 +81,14 @@ func (m *Monitor) getResult(at time.Time) (*models.CheckResult, error) {
 		return nil, fmt.Errorf("request failed with: %s", err)
 	}
 
+	start := time.Now()
 	resp, err := client.Do(req)
+	rt := time.Since(start).Milliseconds()
 	if err != nil {
 		return &models.CheckResult{
 			SiteID:         m.Site.ID,
 			At:             at,
+			ResponseTime:   -1,
 			ResponseCode:   -1,
 			MatchedPattern: false,
 		}, fmt.Errorf("fetch failed with: %s", err)
@@ -100,6 +103,7 @@ func (m *Monitor) getResult(at time.Time) (*models.CheckResult, error) {
 	return &models.CheckResult{
 		SiteID:         m.Site.ID,
 		At:             at,
+		ResponseTime:   models.Period(time.Duration(rt) * time.Millisecond),
 		ResponseCode:   resp.StatusCode,
 		MatchedPattern: found,
 	}, nil

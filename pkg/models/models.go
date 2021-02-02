@@ -29,6 +29,9 @@ func (p *Period) UnmarshalJSON(b []byte) error {
 	case float64:
 		*p = Period(time.Duration(value))
 		return nil
+	case int64:
+		*p = Period(time.Duration(value))
+		return nil
 	case string:
 		var err error
 		d, err := time.ParseDuration(value)
@@ -58,6 +61,7 @@ type CheckResult struct {
 	ID             int       `json:"id"`
 	SiteID         int       `json:"site_id"`
 	At             time.Time `json:"at"`
+	ResponseTime   Period    `json:"response_time"`
 	ResponseCode   int       `json:"response_code"`
 	MatchedPattern bool      `json:"matched"`
 }

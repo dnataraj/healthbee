@@ -18,11 +18,12 @@ CREATE TABLE results (
     id INT GENERATED ALWAYS AS IDENTITY,
     site_id INT,
     checked_at TIMESTAMPTZ,
+    response_time INT,
     result INT,
     matched BOOLEAN NOT NULL,
     CONSTRAINT fk_sites
         FOREIGN KEY(site_id)
-            REFERENCES sites(id)
+            REFERENCES sites(id) ON DELETE CASCADE
 );
 
 CREATE INDEX idx_site_id ON results(site_id)

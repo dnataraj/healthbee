@@ -24,6 +24,7 @@ func TestResultModel_Get(t *testing.T) {
 				ID:             1,
 				SiteID:         1,
 				At:             time.Now().UTC(),
+				ResponseTime:   models.Period(time.Duration(600) * time.Millisecond),
 				ResponseCode:   200,
 				MatchedPattern: true,
 			},
@@ -31,7 +32,7 @@ func TestResultModel_Get(t *testing.T) {
 		},
 		{
 			name:       "Invalid ID",
-			id:         3,
+			id:         10,
 			wantResult: nil,
 			wantError:  models.ErrNoRecord,
 		},
@@ -65,6 +66,7 @@ func TestResultModel_Insert(t *testing.T) {
 		name         string
 		siteID       int
 		at           time.Time
+		responseTime models.Period
 		responseCode int
 		matched      bool
 		wantResult   *models.CheckResult
@@ -74,12 +76,14 @@ func TestResultModel_Insert(t *testing.T) {
 			name:         "Valid insert",
 			siteID:       1,
 			at:           at,
+			responseTime: models.Period(300 * time.Millisecond),
 			responseCode: 200,
 			matched:      true,
 			wantResult: &models.CheckResult{
-				ID:             3,
+				ID:             4,
 				SiteID:         1,
 				At:             at,
+				ResponseTime:   300,
 				ResponseCode:   200,
 				MatchedPattern: true,
 			},
@@ -93,7 +97,7 @@ func TestResultModel_Insert(t *testing.T) {
 			defer teardown()
 
 			r := ResultModel{DB: db}
-			id, err := r.Insert(tt.siteID, tt.at, tt.responseCode, tt.matched)
+			id, err := r.Insert(tt.siteID, tt.at, tt.responseTime, tt.responseCode, tt.matched)
 			if err != tt.wantError {
 				t.Errorf("want %v, got %s", tt.wantError, err)
 			}
@@ -109,6 +113,7 @@ func equals(r1, r2 *models.CheckResult) bool {
 		return r1 == r2
 	}
 	if r1.ID != r2.ID ||
+		r1.ResponseTime != r2.ResponseTime ||
 		r1.ResponseCode != r2.ResponseCode ||
 		r1.SiteID != r2.SiteID ||
 		r1.MatchedPattern != r2.MatchedPattern {
