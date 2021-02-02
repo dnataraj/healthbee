@@ -25,15 +25,15 @@ Monitoring results are collected and eventually stored for analysis. The API is 
 
 ##### Installation and setup
 * HealthBee can be installed on your system using the ```go get``` [command](https://golang.org/pkg/cmd/go/internal/get/), for example
-    ```> go get github.com/dnataraj/healthbee/cmd/healthbee```
-* This will install HealthBee binary to a directory specified in the ```GOBIN``` env var
+    ```$>go get github.com/dnataraj/healthbee/cmd/healthbee```
+* This will install the HealthBee binary to a directory specified in the ```$GOBIN``` env var
   
 ##### Starting & configuring HealthBee 
 Since HealthBee relies on Apache Kafka and PostgreSQL to do its work efficiently and securely, various 
 configurations need to be provided to the application at boot time. 
 
-* After a successful installation (the HealthBee application should be in your ```GOBIN``` or equivalent path)
-* Executing the application with the -h flag, like so ```$ ./healthbee -h``` will produce a usage description
+* After a successful installation, the HealthBee application should be in your ```$GOBIN``` or equivalent path
+* Executing the application with the -h flag, like so ```$> ./healthbee -h``` will produce a usage description
 * The following flags are mandatory
     * ```--brokers``` : The endpoint address for the Kafka service 
     * ```--dsn-string``` : The PostgreSQL database connection string
