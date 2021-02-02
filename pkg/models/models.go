@@ -7,6 +7,7 @@ import (
 )
 
 // Period represents a time interval or period as a time.Duration
+// For HealthBee all monitoring intervals are expressed in seconds
 // Simple marshalling/unmarshalling as demonstrated here:
 // https://stackoverflow.com/questions/48050945/how-to-unmarshal-json-into-durations
 type Period time.Duration
@@ -45,11 +46,11 @@ var ErrDuplicateSite = errors.New("sites: duplicate site registration")
 var ErrNoRecord = errors.New("sites: no record found")
 
 type Site struct {
-	ID         int          `json:"id,omitempty"`
-	URL        string       `json:"url"`
-	Interval   Period       `json:"interval"`
-	Pattern    string       `json:"pattern"`
-	LastResult *CheckResult `json:",omitempty"`
+	ID       int       `json:"id,omitempty"`
+	URL      string    `json:"url"`
+	Interval Period    `json:"interval"`
+	Pattern  string    `json:"pattern"`
+	Created  time.Time `json:"created"`
 }
 
 //TODO: in retrospect this is a not a good name for the struct, it should be HealthCheckResult or just Result

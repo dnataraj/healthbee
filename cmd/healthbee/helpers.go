@@ -72,6 +72,20 @@ func (app *application) NewMonitor(s *models.Site) *pkg.Monitor {
 	return m
 }
 
+// Start resumes monitoring for the last 20 (for now) registered sites when HealthBee is started
+func (app *application) resume() {
+	sites, err := app.sites.GetAll()
+	if err != nil {
+		app.errorLog.Fatal("server: unable to resume monitoring, failed with: ", err)
+	}
+	app.infoLog.Printf("found sites %+v", sites)
+	for _, site := range sites {
+		m := app.NewMonitor(site)
+		app.infoLog.Printf("server: resuming monitoring for site [%d] with address [%s]...", site.ID, site.URL)
+		m.Start(app.wg)
+	}
+}
+
 // read consumes messages from a specific Kafka topic and publishes this to a PostgreSQL database
 // These are the site availability metrics previously published by the site monitors
 // Readers (a.k.a auditors) can be cancelled via the passed in Context

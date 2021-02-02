@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dnataraj/healthbee/pkg/models"
+	"github.com/gorilla/mux"
 	"net/http"
+	"strconv"
 )
 
 // monitor is a POST HTTP handler that accepts a JSON payload and creates a site entry,
@@ -45,9 +47,13 @@ func (app *application) monitor(w http.ResponseWriter, r *http.Request) {
 	app.respond(w, site, http.StatusCreated)
 }
 
-// list is a GET HTTP handler that returns a list of registered sites
+// list is a GET HTTP handler that returns a list of registered sites up to a maximum of 20
 func (app *application) list(w http.ResponseWriter, r *http.Request) {
-	app.respond(w, "{}", http.StatusNotImplemented)
+	sites, err := app.sites.GetAll()
+	if err != nil {
+		app.serverError(w, err)
+	}
+	app.respond(w, sites, http.StatusOK)
 }
 
 // stop is a POST HTTP handler that stops a monitor for a given site
@@ -57,5 +63,17 @@ func (app *application) stop(w http.ResponseWriter, r *http.Request) {
 
 // getMetrics returns a list of the last 20 metrics for the given site
 func (app *application) getMetrics(w http.ResponseWriter, r *http.Request) {
-	app.respond(w, "{}", http.StatusNotImplemented)
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil || id < 1 {
+		app.clientError(w, http.StatusNotFound)
+		return
+	}
+
+	metrics, err := app.results.GetResultsForSite(id)
+	if err != nil {
+		app.serverError(w, err)
+	}
+
+	app.respond(w, metrics, http.StatusOK)
 }

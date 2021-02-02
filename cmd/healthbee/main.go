@@ -11,7 +11,6 @@ import (
 	"github.com/dnataraj/healthbee/pkg/models/postgres"
 	_ "github.com/lib/pq"
 	"github.com/segmentio/kafka-go"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -37,8 +36,6 @@ type application struct {
 func main() {
 	// Passing in --local avoids configuring TLS for local service integration, for example
 	local := flag.Bool("local", false, "Set for local development mode")
-	// --reset is an aid to clean the database
-	reset := flag.Bool("reset", false, "Clear all site registrations and metrics")
 	addr := flag.String("addr", ":8000", "HTTP network address")
 	brokerList := flag.String("brokers", "localhost:9092", "Comma separated distributed cache peers")
 	dsn := flag.String("dsn", "", "DSN/Connection string for the PostgreSQL database")
@@ -55,19 +52,6 @@ func main() {
 		errorLog.Fatal("server: unable to connect to sites database: ", err.Error())
 	}
 	defer db.Close()
-
-	if *reset {
-		// re-initialize the database
-		script, err := ioutil.ReadFile("pkg/models/postgres/testdata/setup.sql")
-		if err != nil {
-			errorLog.Fatal("server: unable to reset HealthBee database: ", err.Error())
-		}
-		infoLog.Println("server: HealthBee database reset requested, performing...")
-		_, err = db.Exec(string(script))
-		if err != nil {
-			errorLog.Fatal("server: unable to reset HealthBee database: ", err.Error())
-		}
-	}
 
 	// initialize TLS config for non-local services
 	var tlsConfig *tls.Config
@@ -120,6 +104,8 @@ func main() {
 	go app.read(ctx, 1, r1, &wg)
 	wg.Add(1)
 	go app.read(ctx, 2, r2, &wg)
+
+	app.resume()
 
 	infoLog.Printf("starting HealthBee API server on %s", *addr)
 	wg.Add(1)

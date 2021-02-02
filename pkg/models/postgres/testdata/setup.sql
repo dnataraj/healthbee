@@ -11,6 +11,7 @@ CREATE TABLE sites (
     PRIMARY KEY(id)
 );
 
+CREATE INDEX idx_site ON sites(id);
 CREATE INDEX idx_site_hash ON sites (site_hash);
 
 CREATE TABLE results (
@@ -23,3 +24,5 @@ CREATE TABLE results (
         FOREIGN KEY(site_id)
             REFERENCES sites(id)
 );
+
+CREATE INDEX idx_site_id ON results(site_id)

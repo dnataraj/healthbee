@@ -40,8 +40,6 @@ configurations need to be provided to the application at boot time.
     * ```--service-cert``` : (For secure communication with Kafka) The Kafka provider public key certificate
     * ```--service-key``` : (For secure communication with Kafka) The Kafka provider private key
     * ```--ca-cert``` : (For secure communication with Kafka) The CA certificate
-* It is also possible to reset the HealthBee database by providing the ```--reset``` option at startup. Doing this will _deregister_ all
-sites and remove all previously collected site metrics.
   
 #### Shutting down
 * A clean shutdown of HealthBee can be performed by simple hitting Ctrl-C on the foreground process or sending a ```SIGINT``` to
