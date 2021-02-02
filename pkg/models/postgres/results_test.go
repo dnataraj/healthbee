@@ -18,7 +18,7 @@ func TestResultModel_Get(t *testing.T) {
 		wantError  error
 	}{
 		{
-			name: "Valid ID",
+			name: "Valid result",
 			id:   1,
 			wantResult: &models.CheckResult{
 				ID:             1,
@@ -31,7 +31,7 @@ func TestResultModel_Get(t *testing.T) {
 			wantError: nil,
 		},
 		{
-			name:       "Invalid ID",
+			name:       "Invalid result",
 			id:         10,
 			wantResult: nil,
 			wantError:  models.ErrNoRecord,
@@ -106,6 +106,34 @@ func TestResultModel_Insert(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestResultModel_GetResultsForSite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("postgres: skipping integration test")
+	}
+
+	t.Run("Get all metrics", func(t *testing.T) {
+		db, teardown := newTestDB(t)
+		defer teardown()
+
+		r := ResultModel{DB: db}
+		results, err := r.GetResultsForSite(2)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// check number of metrics returned
+		if len(results) != 2 {
+			t.Errorf("want 2 metrics, got %d", len(results))
+		}
+		// test validity of ordering
+		res := results[0]
+		if res.ResponseTime.Duration().Milliseconds() != 1200 {
+			t.Errorf("want response time 200, got %d", res.ResponseTime)
+		}
+
+	})
 }
 
 func equals(r1, r2 *models.CheckResult) bool {

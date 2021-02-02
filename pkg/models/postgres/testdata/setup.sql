@@ -16,7 +16,7 @@ CREATE INDEX idx_site_hash ON sites (site_hash);
 
 CREATE TABLE results (
     id INT GENERATED ALWAYS AS IDENTITY,
-    site_id INT,
+    site_id INT NOT NULL ,
     checked_at TIMESTAMPTZ,
     response_time INT,
     result INT,

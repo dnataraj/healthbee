@@ -34,7 +34,7 @@ func (s *SiteModel) Get(id int) (*models.Site, error) {
 	// We handle the interval separately here to maintain its unit (i.e. seconds)
 	var p int
 	stmt := `SELECT id, url, period, pattern, created FROM sites WHERE id = $1`
-	err := s.DB.QueryRow(stmt, id).Scan(&site.ID, &site.URL, &p, &site.Interval, &site.Created)
+	err := s.DB.QueryRow(stmt, id).Scan(&site.ID, &site.URL, &p, &site.Pattern, &site.Created)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRecord
