@@ -44,6 +44,8 @@ func (m *Monitor) Start(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
+		defer m.writer.Close()
+
 		t := time.NewTicker(m.Site.Interval.Duration())
 		defer t.Stop()
 
@@ -64,7 +66,7 @@ func (m *Monitor) Start(wg *sync.WaitGroup) {
 					warnLog.Printf("monitor: site[%d] check failed at %s, with: %s", m.Site.ID, at.Format(time.Stamp), err.Error())
 				}
 			case <-m.Context.Done():
-				fmt.Printf("site %d> monitoring stopped.\n", m.Site.ID)
+				infoLog.Printf("monitor: monitoring halted for site [%d]", m.Site.ID)
 				return
 			}
 		}

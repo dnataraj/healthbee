@@ -88,10 +88,11 @@ func (app *application) resume() {
 
 // read consumes messages from a specific Kafka topic and publishes this to a PostgreSQL database
 // These are the site availability metrics previously published by the site monitors
-// Readers (a.k.a auditors) can be cancelled via the passed in Context
+// Readers (a.k.a auditors) can be cancelled via the passed in Context and are closed here.
 // TODO: This belongs in pkg along with Monitor
 func (app *application) read(ctx context.Context, id int, r *kafka.Reader, wg *sync.WaitGroup) {
 	defer wg.Done()
+	defer r.Close()
 
 	for {
 		select {
