@@ -24,8 +24,8 @@ The HealthBee API can be used to register any (web) site for monitoring. The API
 
 ##### Installation and setup
 
-* HealthBee can be installed on your system using the ```go install``` command, for example
-    ```> go install github.com/dnataraj/healthbee```
+* HealthBee can be installed on your system using the ```go get``` command, for example
+    ```> go get github.com/dnataraj/healthbee/cmd/healthbee```
 * This will install HealthBee binary to a directory specified in the ```GOBIN``` env var
 * A clean shut down of the service can be achieved by simply doing a Ctrl-C
 
