@@ -50,6 +50,14 @@ the running process
 * TODO: Highlight testing strategy and possibilities - both unit and integration
 * TODO: Add support for site & metrics removal
 
+#### Testing guide
+
+To run the tests, after the repository is cloned:
+* To skip the database integration test (for which a live database is needed), do ```$REPO_ROOT> go test -v ./...```
+* To run the database integration tests, provide a PostgreSQL datasource in the form of an environment variable, like so:
+  * ```$> HB_TEST_DSN="<connection string>" go test -v ./...```
+  
+
 #### Attributions and credits
 * Attributions have been mentioned in the source code wherever appropriate but are also listed here
     * https://tylerchr.blog/golang-18-whats-coming/ (on HTTP connection draining)
