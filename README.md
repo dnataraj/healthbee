@@ -27,9 +27,28 @@ The HealthBee API can be used to register any (web) site for monitoring. The API
 * HealthBee can be installed on your system using the ```go get``` command, for example
     ```> go get github.com/dnataraj/healthbee/cmd/healthbee```
 * This will install HealthBee binary to a directory specified in the ```GOBIN``` env var
-* A clean shut down of the service can be achieved by simply doing a Ctrl-C
+  
+##### Starting & configuring HealthBee 
+Since HealthBee relies on Apache Kafka and PostgreSQL to do its work in a secure fashion, various 
+configurations need to be provided to the application. 
 
+* After a successful installation (the HealthBee application should be in your ```GOBIN``` or equivalent path)
+* Executing the application with the -h flag, like so ```$ ./healthbee -h``` will produce a usage description
+* The following flags are mandatory
+    * ```--brokers``` : The endpoint address for the Kafka service 
+    * ```--dsn-string``` : The PostgreSQL database connection string
+    * ```--service-cert``` : (For secure communication with Kafka) The Kafka provider public key certificate
+    * ```--service-key``` : (For secure communication with Kafka) The Kafka provider private key
+    * ```--ca-cert``` : (For secure communication with Kafka) The CA certificate
+* It is also possible to reset the HealthBee database by providing the ```--reset``` option at startup. Doing this will _deregister_ all
+sites and remove all previously collected site metrics.
+  
+#### Shutting down
+
+* A clean shutdown of HealthBee can be performed by simple hitting Ctrl-C on the foreground process or sending a ```SIGINT``` to
+the running process
+  
 #### Development Notes
 
 * TODO: Highlight testing strategy and possibilities - both unit and integration
-* TODO: Support API 
+* TODO: Complete API implementation 
