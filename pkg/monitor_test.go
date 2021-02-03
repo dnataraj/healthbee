@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// A simple, practical integration test to verify publishing messages
 func TestMonitor_Start(t *testing.T) {
 	if testing.Short() {
 		t.Skip("kafka: skipping integration test")
@@ -40,7 +41,12 @@ func TestMonitor_Start(t *testing.T) {
 	m2 := NewMonitor(site2, w)
 	m2.Start(&wg)
 
-	// sleep for 6 seconds
+	//TODO: Create a consumer and read a couple of messages for verification
+
+	// sleep for 6 seconds, at least 2 messages should be published
 	time.Sleep(6 * time.Second)
+	// halt the monitors
+	m1.Cancel()
+	m2.Cancel()
 
 }
