@@ -54,9 +54,16 @@ the running process
 
 To run the tests, after the repository is cloned:
 * To skip the database integration test (for which a live database is needed), do ```$REPO_ROOT> go test -v ./...```
-* To run the database integration tests, provide a PostgreSQL datasource in the form of an environment variable, like so:
-  * ```$> HB_TEST_DSN="<connection string>" go test -v ./...```
+* To run the integration tests, provide the service configurations in the form of environment variables, like so:
   
+```
+HB_TEST_DSN="<PostgreSQL DSN>" \
+HB_TEST_KAFKA_SERVICE="<Kafka service endpoint>" \
+HB_TEST_KAFKA_CERT_PATH="" \
+HB_TEST_KAFKA_CERT_KEY="" \
+HB_TEST_CA_CERT_PATH="" \
+go test -v ./...
+```
 
 #### Attributions and credits
 * Attributions have been mentioned in the source code wherever appropriate but are also listed here
