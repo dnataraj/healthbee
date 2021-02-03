@@ -74,6 +74,8 @@ func main() {
 		Topic: "Metrics", RequiredAcks: kafka.RequireAll,
 		Transport: &kafka.Transport{TLS: tlsConfig},
 	}
+	// we will close our only writer (for now) here
+	defer w.Close()
 
 	wg := sync.WaitGroup{}
 	app := &application{
@@ -97,8 +99,8 @@ func main() {
 	// start the auditors - these are the consumers for the topic
 	infoLog.Println("server: creating readers for incoming metrics...")
 	dialer := &kafka.Dialer{Timeout: 10 * time.Second, TLS: tlsConfig}
-	r1 := newReader(brokers, dialer)
-	r2 := newReader(brokers, dialer)
+	r1 := pkg.NewReader(brokers, dialer)
+	r2 := pkg.NewReader(brokers, dialer)
 	infoLog.Println("auditor: starting 2 readers for incoming metrics...")
 	wg.Add(1)
 	go app.read(ctx, 1, r1, &wg)
@@ -143,13 +145,4 @@ func webServer(ctx context.Context, srv *http.Server, wg *sync.WaitGroup) {
 	shCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(shCtx)
-}
-
-func newReader(brokers []string, dialer *kafka.Dialer) *kafka.Reader {
-	return kafka.NewReader(kafka.ReaderConfig{
-		Brokers: brokers,
-		GroupID: "message-reader-group",
-		Topic:   "Metrics",
-		Dialer:  dialer,
-	})
 }

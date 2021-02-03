@@ -23,17 +23,7 @@ func OpenDB(dsn string) (*sql.DB, error) {
 }
 
 func CreateTopic(name string, brokers []string, config *tls.Config) error {
-	dialer := &kafka.Dialer{Timeout: 10 * time.Second, TLS: config}
-	conn, err := dialer.Dial("tcp", brokers[0])
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	ctlr, err := conn.Controller()
-	if err != nil {
-		return err
-	}
-	ctlrConn, err := dialer.Dial("tcp", net.JoinHostPort(ctlr.Host, strconv.Itoa(ctlr.Port)))
+	ctlrConn, err := getController(brokers, config)
 	if err != nil {
 		return err
 	}
@@ -47,6 +37,30 @@ func CreateTopic(name string, brokers []string, config *tls.Config) error {
 		},
 	}
 	return ctlrConn.CreateTopics(topicConfigs...)
+}
+
+func DeleteTopic(name string, brokers []string, config *tls.Config) error {
+	ctlrConn, err := getController(brokers, config)
+	if err != nil {
+		return err
+	}
+	defer ctlrConn.Close()
+
+	return ctlrConn.DeleteTopics(name)
+}
+
+func getController(brokers []string, config *tls.Config) (*kafka.Conn, error) {
+	dialer := &kafka.Dialer{Timeout: 10 * time.Second, TLS: config}
+	conn, err := dialer.Dial("tcp", brokers[0])
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	ctlr, err := conn.Controller()
+	if err != nil {
+		return nil, err
+	}
+	return dialer.Dial("tcp", net.JoinHostPort(ctlr.Host, strconv.Itoa(ctlr.Port)))
 }
 
 func GetTLSConfig(srvCertPath, keyPath, caPath string) (*tls.Config, error) {
@@ -66,4 +80,13 @@ func GetTLSConfig(srvCertPath, keyPath, caPath string) (*tls.Config, error) {
 			RootCAs:      caPool,
 		},
 		nil
+}
+
+func NewReader(brokers []string, dialer *kafka.Dialer) *kafka.Reader {
+	return kafka.NewReader(kafka.ReaderConfig{
+		Brokers: brokers,
+		GroupID: "message-reader-group",
+		Topic:   "Metrics",
+		Dialer:  dialer,
+	})
 }

@@ -44,7 +44,6 @@ func (m *Monitor) Start(wg *sync.WaitGroup) {
 	wg.Add(1)
 	go func(wg *sync.WaitGroup) {
 		defer wg.Done()
-		defer m.writer.Close()
 
 		t := time.NewTicker(m.Site.Interval.Duration())
 		defer t.Stop()
