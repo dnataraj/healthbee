@@ -41,6 +41,12 @@ configurations need to be provided to the application at boot time.
     * ```--service-key``` : (For secure communication with Kafka) The Kafka provider private key
     * ```--ca-cert``` : (For secure communication with Kafka) The CA certificate
   
+Once HealthBee is running, the ```/sites``` API can be used to register a new site for monitoring. As described earlier,
+the site address(URL), monitoring interval and search pattern need to be provided.
+
+Registering a site initiates its monitoring immediately. Restarting HealthBee will resume monitoring of all registered
+sites.
+
 #### Shutting down
 * A clean shutdown of HealthBee can be performed by simple hitting Ctrl-C on the foreground process or sending a ```SIGINT``` to
 the running process
