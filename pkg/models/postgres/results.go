@@ -52,10 +52,19 @@ func (r *ResultModel) GetResultsForSite(siteID int) ([]*models.CheckResult, erro
 		res := &models.CheckResult{}
 		var rt int
 		if err := rows.Scan(&res.ID, &res.SiteID, &res.At, &rt, &res.ResponseCode, &res.MatchedPattern); err != nil {
+			// It's odd that Scan doesn't return sql.ErrNoRows as described here:
+			// https://pkg.go.dev/database/sql#ErrNoRows
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, models.ErrNoRecord
+			}
 			return nil, err
 		}
 		res.ResponseTime = models.Period(time.Duration(rt) * time.Millisecond)
 		metrics = append(metrics, res)
+	}
+	if len(metrics) == 0 {
+		// We did not find the site
+		return nil, models.ErrNoRecord
 	}
 
 	return metrics, nil

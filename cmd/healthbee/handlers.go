@@ -72,7 +72,12 @@ func (app *application) getMetrics(w http.ResponseWriter, r *http.Request) {
 
 	metrics, err := app.results.GetResultsForSite(id)
 	if err != nil {
-		app.serverError(w, err)
+		if errors.Is(err, models.ErrNoRecord) {
+			app.clientError(w, http.StatusNotFound)
+		} else {
+			app.serverError(w, err)
+		}
+		return
 	}
 
 	app.respond(w, metrics, http.StatusOK)
