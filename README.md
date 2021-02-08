@@ -3,7 +3,7 @@
 HealthBee is a self-hosted website availability monitoring service.
 
 #### System Requirements
-* HealthBee has been tested to work on Ubuntu 20.04 LTS with Go 15.2
+* HealthBee has been tested to work on Ubuntu 20.04 LTS with Go 1.15.2
 
 #### User Guide
 
