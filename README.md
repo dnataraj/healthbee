@@ -59,7 +59,7 @@ the running process
 #### Testing guide
 
 To run the tests, after the repository is cloned:
-* To skip the database integration test (for which a live database is needed), do ```$REPO_ROOT> go test -v ./...```
+* To skip the database integration test (for which a live database is needed), do ```$REPO_ROOT> go test -v -skip ./...```
 * To run the integration tests, provide the service configurations in the form of environment variables, like so:
   
 ```
